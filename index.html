@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>US Data Center Intelligence</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+
+/* ── DARK THEME (default) ── */
+:root{
+  --bg:#0a0f18;--panel:#0f1824;--card:#131f2e;--card2:#162233;
+  --line:#1c2e42;--line2:#243548;--dim:#3d5a78;--mid:#5a7a9a;
+  --pale:#8aaabb;--text:#cde4f5;--bright:#eaf4fc;
+  --cyan:#00ccee;--cyanD:rgba(0,204,238,.13);
+  --orange:#ff6e3a;--orangeD:rgba(255,110,58,.13);
+  --green:#3dffc0;--greenD:rgba(61,255,192,.13);
+  --yellow:#ffd060;--yellowD:rgba(255,208,96,.13);
+  --purple:#c07aff;--purpleD:rgba(192,122,255,.13);
+  --shadow:rgba(0,0,0,.4);
+  --modal-bg:rgba(0,0,0,.65);
+}
+
+/* ── LIGHT THEME ── */
+[data-theme="light"]{
+  --bg:#f0f4f8;--panel:#ffffff;--card:#ffffff;--card2:#f5f8fb;
+  --line:#d0dde8;--line2:#c0cdd8;--dim:#7a95aa;--mid:#4a6a84;
+  --pale:#3a5a74;--text:#1a2e3e;--bright:#0a1824;
+  --cyan:#007aaa;--cyanD:rgba(0,122,170,.1);
+  --orange:#cc4a18;--orangeD:rgba(204,74,24,.1);
+  --green:#007a50;--greenD:rgba(0,122,80,.1);
+  --yellow:#996000;--yellowD:rgba(153,96,0,.1);
+  --purple:#7030c0;--purpleD:rgba(112,48,192,.1);
+  --shadow:rgba(0,0,0,.12);
+  --modal-bg:rgba(0,0,0,.4);
+}
+
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:background .25s,color .25s}
+
+/* ── TOPBAR ── */
+.topbar{background:var(--panel);border-bottom:1px solid var(--line);padding:0 28px;display:flex;align-items:center;gap:16px;height:58px;position:sticky;top:0;z-index:100;flex-wrap:wrap;transition:background .25s,border-color .25s}
+.brand{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.brand-icon{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--cyan),var(--orange));display:flex;align-items:center;justify-content:center;font-size:16px}
+.brand h1{font-size:15px;font-weight:700;letter-spacing:.04em;color:var(--bright)}
+.brand p{font-size:9px;color:var(--cyan);letter-spacing:.12em;margin-top:1px}
+.kpis{display:flex;gap:0;margin-left:8px}
+.kpi{padding:0 14px;border-left:1px solid var(--line);text-align:center}
+.kv{font-size:16px;font-weight:700;color:var(--cyan)}
+.kl{font-size:9px;color:var(--mid);text-transform:uppercase;letter-spacing:.08em;margin-top:1px}
+.topbar-right{margin-left:auto;display:flex;gap:6px;align-items:center}
+.vbtn{padding:5px 12px;border-radius:6px;border:1px solid var(--line2);background:transparent;color:var(--mid);font-size:11px;cursor:pointer;transition:all .15s;font-family:inherit}
+.vbtn:hover{color:var(--text);border-color:var(--pale)}
+.vbtn.on{background:var(--card2);color:var(--cyan);border-color:var(--cyan)}
+
+/* theme toggle */
+.theme-btn{padding:5px 11px;border-radius:6px;border:1px solid var(--line2);background:transparent;color:var(--mid);font-size:13px;cursor:pointer;transition:all .15s;line-height:1;display:flex;align-items:center;gap:5px;font-family:inherit;font-size:11px}
+.theme-btn:hover{color:var(--text);border-color:var(--pale)}
+
+/* add project button */
+.add-btn{padding:5px 13px;border-radius:6px;border:1px solid var(--cyan);background:var(--cyanD);color:var(--cyan);font-size:11px;cursor:pointer;transition:all .15s;font-family:inherit;font-weight:600;white-space:nowrap}
+.add-btn:hover{background:var(--cyan);color:var(--bg)}
+
+/* ── FILTERS ── */
+.filters{background:var(--panel);border-bottom:1px solid var(--line);padding:14px 28px;display:flex;flex-direction:column;gap:10px;transition:background .25s}
+.frow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.flbl{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;min-width:70px;flex-shrink:0}
+.pills{display:flex;gap:4px;flex-wrap:wrap}
+.pill{padding:4px 12px;border-radius:100px;border:1px solid var(--line2);background:transparent;color:var(--mid);font-size:11px;cursor:pointer;transition:all .13s;font-family:inherit;white-space:nowrap}
+.pill:hover{border-color:var(--pale);color:var(--text)}
+.pill.p-all{border-color:var(--cyan);color:var(--cyan);background:var(--cyanD)}
+.pill.p-op{border-color:var(--green);color:var(--green);background:var(--greenD)}
+.pill.p-con{border-color:var(--orange);color:var(--orange);background:var(--orangeD)}
+.pill.p-pla{border-color:var(--yellow);color:var(--yellow);background:var(--yellowD)}
+.pill.p-ann{border-color:var(--purple);color:var(--purple);background:var(--purpleD)}
+.fsep{width:1px;height:24px;background:var(--line);margin:0 4px;flex-shrink:0}
+.search-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-left:auto}
+.sinput{padding:7px 12px;background:var(--card);border:1px solid var(--line2);border-radius:6px;color:var(--text);font-size:12px;outline:none;font-family:inherit;width:210px;transition:border-color .15s,background .25s}
+.sinput:focus{border-color:var(--cyan)}
+.sinput::placeholder{color:var(--dim)}
+.sselect{padding:6px 10px;background:var(--card);border:1px solid var(--line2);border-radius:6px;color:var(--mid);font-size:11px;outline:none;cursor:pointer;font-family:inherit;transition:border-color .15s,background .25s}
+.sselect:focus{border-color:var(--cyan)}
+
+/* ── RESULTS BAR ── */
+.rbar{padding:9px 28px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line);font-size:11px;color:var(--mid);flex-wrap:wrap}
+.rcount{color:var(--cyan);font-weight:700}
+.clearbtn{background:none;border:1px solid var(--line2);border-radius:100px;color:var(--mid);font-size:10px;cursor:pointer;padding:3px 10px;font-family:inherit;transition:all .13s}
+.clearbtn:hover{border-color:var(--orange);color:var(--orange)}
+
+/* ── MAIN ── */
+.main{padding:20px 28px 40px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px}
+
+/* ── SITE CARD ── */
+.site-card{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;transition:border-color .15s,box-shadow .15s,transform .15s,background .25s}
+.site-card:hover{border-color:var(--pale);transform:translateY(-2px);box-shadow:0 8px 24px var(--shadow)}
+.site-card.open{border-color:var(--cyan);box-shadow:0 0 20px var(--cyanD)}
+.acc{height:3px}
+.cbody{padding:15px 17px}
+.ctop{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:5px}
+.cname{font-size:13px;font-weight:700;color:var(--bright);line-height:1.35;flex:1}
+.sbadge{font-size:9px;padding:3px 9px;border-radius:100px;border:1px solid;white-space:nowrap;flex-shrink:0;font-weight:600}
+.cdev{font-size:11px;color:var(--mid);margin-bottom:3px}
+.cloc{font-size:10px;color:var(--dim);margin-bottom:5px}
+.clink-row{margin-bottom:11px}
+.clink{font-size:10px;color:var(--cyan);text-decoration:none;display:inline-flex;align-items:center;gap:4px;border:1px solid var(--cyanD);border-radius:100px;padding:2px 9px;transition:all .13s;background:var(--cyanD)}
+.clink:hover{background:var(--cyan);color:var(--bg)}
+.mets{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:12px}
+.met{background:var(--card2);padding:9px 7px;text-align:center;transition:background .25s}
+.mv{font-size:12px;font-weight:700;line-height:1;margin-bottom:3px}
+.mk{font-size:8px;color:var(--dim);text-transform:uppercase;letter-spacing:.07em}
+.detail{max-height:0;overflow:hidden;transition:max-height .3s ease,opacity .3s ease;opacity:0}
+.detail.open{max-height:800px;opacity:1}
+.dinn{border-top:1px solid var(--line);padding:13px 17px 4px}
+.drows{display:grid;grid-template-columns:1fr 1fr;gap:7px 16px;margin-bottom:11px}
+.drow{display:flex;flex-direction:column;gap:2px}
+.dkey{font-size:8px;color:var(--dim);text-transform:uppercase;letter-spacing:.09em}
+.dval{font-size:11px;color:var(--pale);font-weight:500}
+.dnotes{font-size:11px;line-height:1.7;color:var(--mid);padding:10px 12px;background:var(--panel);border-radius:7px;border-left:2px solid var(--cyan);margin-bottom:11px;transition:background .25s}
+.sbar-wrap{margin-bottom:13px}
+.sbar-lbl{display:flex;justify-content:space-between;font-size:9px;color:var(--dim);margin-bottom:4px}
+.sbar-track{height:3px;background:var(--line);border-radius:3px;overflow:hidden}
+.sbar-fill{height:100%;border-radius:3px;transition:width .5s ease}
+.togglebtn{width:100%;padding:8px;border:none;border-top:1px solid var(--line);background:var(--card2);color:var(--dim);font-size:9px;text-transform:uppercase;letter-spacing:.1em;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:5px;transition:all .15s}
+.togglebtn:hover{color:var(--cyan)}
+.arr{display:inline-block;transition:transform .22s}
+.arr.up{transform:rotate(180deg)}
+
+/* ── TABLE ── */
+.twrap{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+table{width:100%;border-collapse:collapse;font-size:11px}
+thead tr{background:var(--panel);border-bottom:1px solid var(--line)}
+th{padding:10px 13px;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--dim);text-align:left;cursor:pointer;white-space:nowrap;user-select:none;transition:color .13s}
+th:hover{color:var(--cyan)}
+th.tsort{color:var(--cyan)}
+tbody tr{border-bottom:1px solid var(--line);transition:background .12s;cursor:pointer}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--card2)}
+td{padding:10px 13px;vertical-align:middle;color:var(--mid)}
+td.tname{font-weight:700;color:var(--bright);font-size:12px;max-width:200px}
+td.tmono{font-size:10px}
+.empty{padding:60px;text-align:center;color:var(--dim);font-size:13px;grid-column:1/-1}
+
+/* ── MODAL OVERLAY ── */
+.modal-overlay{position:fixed;inset:0;background:var(--modal-bg);display:flex;align-items:center;justify-content:center;z-index:999;padding:20px;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--panel);border:1px solid var(--line2);border-radius:16px;width:100%;max-width:580px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.5);transition:background .25s}
+.modal-head{padding:20px 24px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--panel);z-index:5;transition:background .25s}
+.modal-head h2{font-size:16px;font-weight:700;color:var(--bright)}
+.modal-head p{font-size:11px;color:var(--mid);margin-top:2px}
+.modal-close{background:none;border:1px solid var(--line2);border-radius:50%;width:28px;height:28px;color:var(--mid);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.modal-close:hover{background:var(--orangeD);border-color:var(--orange);color:var(--orange)}
+.modal-body{padding:20px 24px 24px;display:flex;flex-direction:column;gap:14px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-row.full{grid-template-columns:1fr}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.09em;font-weight:600}
+.field input,.field select,.field textarea{padding:8px 11px;background:var(--card);border:1px solid var(--line2);border-radius:7px;color:var(--text);font-size:12px;outline:none;font-family:inherit;transition:border-color .15s,background .25s}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--cyan)}
+.field input::placeholder,.field textarea::placeholder{color:var(--dim)}
+.field textarea{resize:vertical;min-height:70px;line-height:1.6}
+.field select option{background:var(--panel);color:var(--text)}
+.modal-foot{padding:16px 24px;border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end;position:sticky;bottom:0;background:var(--panel);transition:background .25s}
+.btn-cancel{padding:8px 18px;border-radius:7px;border:1px solid var(--line2);background:transparent;color:var(--mid);font-size:12px;cursor:pointer;font-family:inherit;transition:all .15s}
+.btn-cancel:hover{border-color:var(--pale);color:var(--text)}
+.btn-submit{padding:8px 22px;border-radius:7px;border:none;background:var(--cyan);color:var(--bg);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
+.btn-submit:hover{opacity:.88}
+.success-toast{position:fixed;bottom:24px;right:24px;background:var(--green);color:#0a1824;padding:10px 18px;border-radius:10px;font-size:12px;font-weight:700;z-index:1001;transform:translateY(60px);opacity:0;transition:all .3s;pointer-events:none}
+.success-toast.show{transform:translateY(0);opacity:1}
+
+@media(max-width:640px){
+  .topbar{padding:0 14px;height:auto;padding-top:10px;padding-bottom:10px}
+  .kpis{display:none}
+  .filters{padding:12px 14px}
+  .rbar{padding:8px 14px}
+  .main{padding:14px 14px 32px}
+  .grid{grid-template-columns:1fr}
+  .mets{grid-template-columns:repeat(2,1fr)}
+  .drows{grid-template-columns:1fr}
+  .form-row{grid-template-columns:1fr}
+  .topbar-right{gap:4px}
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-icon">⚡</div>
+    <div>
+      <h1>US Data Center Intelligence</h1>
+      <p>Powered Land &amp; Development Tracker · 2025–2026</p>
+    </div>
+  </div>
+  <div class="kpis">
+    <div class="kpi"><div class="kv" id="kv-sites">28</div><div class="kl">Sites</div></div>
+    <div class="kpi"><div class="kv">~50 GW</div><div class="kl">Planned Cap.</div></div>
+    <div class="kpi"><div class="kv">$1T+</div><div class="kl">Investment</div></div>
+    <div class="kpi"><div class="kv">35K+ ac</div><div class="kl">Land Tracked</div></div>
+  </div>
+  <div class="topbar-right">
+    <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">☀ Light Mode</button>
+    <button class="vbtn on" id="vb-grid" onclick="setView('grid')">&#9726; Cards</button>
+    <button class="vbtn" id="vb-tbl" onclick="setView('tbl')">&#9776; Table</button>
+    <button class="add-btn" onclick="openModal()">+ Add Project</button>
+  </div>
+</div>
+
+<!-- FILTERS -->
+<div class="filters">
+  <div class="frow">
+    <span class="flbl">Status</span>
+    <div class="pills">
+      <button class="pill p-all" data-g="status" data-v="all">All</button>
+      <button class="pill" data-g="status" data-v="operational">&#9679; Operational</button>
+      <button class="pill" data-g="status" data-v="construction">&#9881; Construction</button>
+      <button class="pill" data-g="status" data-v="planned">&#9670; Planned</button>
+      <button class="pill" data-g="status" data-v="announced">&#9711; Announced</button>
+    </div>
+  </div>
+  <div class="frow">
+    <span class="flbl">Capacity</span>
+    <div class="pills">
+      <button class="pill p-all" data-g="size" data-v="all">All sizes</button>
+      <button class="pill" data-g="size" data-v="mega">&gt;1 GW</button>
+      <button class="pill" data-g="size" data-v="large">500 MW – 1 GW</button>
+      <button class="pill" data-g="size" data-v="mid">200 – 500 MW</button>
+      <button class="pill" data-g="size" data-v="small">&lt;200 MW</button>
+    </div>
+    <div class="fsep"></div>
+    <span class="flbl">Region</span>
+    <div class="pills">
+      <button class="pill p-all" data-g="region" data-v="all">All</button>
+      <button class="pill" data-g="region" data-v="South">South</button>
+      <button class="pill" data-g="region" data-v="Midwest">Midwest</button>
+      <button class="pill" data-g="region" data-v="Northeast">Northeast</button>
+      <button class="pill" data-g="region" data-v="West">West</button>
+    </div>
+  </div>
+  <div class="frow">
+    <span class="flbl">Developer</span>
+    <div class="pills">
+      <button class="pill p-all" data-g="dev" data-v="all">All</button>
+      <button class="pill" data-g="dev" data-v="OpenAI">Stargate / OpenAI</button>
+      <button class="pill" data-g="dev" data-v="Amazon">Amazon</button>
+      <button class="pill" data-g="dev" data-v="Meta">Meta</button>
+      <button class="pill" data-g="dev" data-v="Microsoft">Microsoft</button>
+      <button class="pill" data-g="dev" data-v="Google">Google</button>
+      <button class="pill" data-g="dev" data-v="Other">Other</button>
+    </div>
+    <div class="search-row">
+      <input class="sinput" type="text" id="search" placeholder="Search name, developer, location...">
+      <select class="sselect" id="sort-sel">
+        <option value="mw-d">MW: High to Low</option>
+        <option value="mw-a">MW: Low to High</option>
+        <option value="inv-d">Investment: High to Low</option>
+        <option value="ac-d">Acres: High to Low</option>
+        <option value="yr-a">Year: Earliest First</option>
+        <option value="nm-a">Name: A to Z</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- RESULTS BAR -->
+<div class="rbar">
+  Showing <span class="rcount" id="r-count">28</span> of <span id="r-total">28</span> sites
+  <button class="clearbtn" id="clearbtn" style="display:none" onclick="clearAll()">Clear all filters ✕</button>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="grid" id="grid"></div>
+  <div class="twrap" id="twrap" style="display:none">
+    <table><thead id="thead"></thead><tbody id="tbody"></tbody></table>
+  </div>
+</div>
+
+<!-- ADD PROJECT MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="overlayClick(event)">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <h2>Add New Project</h2>
+        <p>Fill in the details below to add a site to the tracker</p>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row full">
+        <div class="field">
+          <label>Project Name *</label>
+          <input type="text" id="f-name" placeholder="e.g. Amazon – Columbus Campus">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label>Developer / Owner *</label>
+          <input type="text" id="f-dev" placeholder="e.g. Amazon AWS">
+        </div>
+        <div class="field">
+          <label>Developer Group</label>
+          <select id="f-dg">
+            <option value="OpenAI">Stargate / OpenAI</option>
+            <option value="Amazon">Amazon</option>
+            <option value="Meta">Meta</option>
+            <option value="Microsoft">Microsoft</option>
+            <option value="Google">Google</option>
+            <option value="Other" selected>Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label>Location *</label>
+          <input type="text" id="f-loc" placeholder="e.g. Columbus, OH">
+        </div>
+        <div class="field">
+          <label>Region *</label>
+          <select id="f-region">
+            <option value="South">South</option>
+            <option value="Midwest">Midwest</option>
+            <option value="Northeast">Northeast</option>
+            <option value="West">West</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label>Capacity (MW) *</label>
+          <input type="number" id="f-mw" placeholder="e.g. 500" min="1">
+        </div>
+        <div class="field">
+          <label>Capacity Label</label>
+          <input type="text" id="f-mwl" placeholder="e.g. ~500 MW or 1.2 GW">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label>Acreage *</label>
+          <input type="number" id="f-acres" placeholder="e.g. 300" min="1">
+        </div>
+        <div class="field">
+          <label>Investment</label>
+          <input type="text" id="f-inv" placeholder="e.g. $2B or Undisclosed">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label>Project Status *</label>
+          <select id="f-status">
+            <option value="announced">Announced</option>
+            <option value="planned">Planned / Permitted</option>
+            <option value="construction">Under Construction</option>
+            <option value="operational">Operational</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Target Year</label>
+          <input type="number" id="f-year" placeholder="e.g. 2027" min="2024" max="2040">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label>Sq Footage</label>
+          <input type="text" id="f-sqft" placeholder="e.g. 2,000,000 or N/A">
+        </div>
+        <div class="field">
+          <label>Number of Buildings</label>
+          <input type="text" id="f-bldgs" placeholder="e.g. 8 or TBD">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label>Jobs Created</label>
+          <input type="text" id="f-jobs" placeholder="e.g. 1,000+ construction">
+        </div>
+        <div class="field">
+          <label>Energy Source</label>
+          <input type="text" id="f-energy" placeholder="e.g. Grid + Solar">
+        </div>
+      </div>
+      <div class="form-row full">
+        <div class="field">
+          <label>Project Website URL</label>
+          <input type="url" id="f-url" placeholder="e.g. https://www.example.com/datacenter">
+        </div>
+      </div>
+      <div class="form-row full">
+        <div class="field">
+          <label>Project Notes / Overview</label>
+          <textarea id="f-notes" placeholder="Brief description of the project, key facts, context..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-submit" onclick="submitProject()">Add Project →</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="success-toast" id="toast">✓ Project added successfully!</div>
+
+<script>
+// ── DATA ─────────────────────────────────────────────────────────
+var DATA=[
+{id:1,name:"Stargate – Abilene Flagship",dev:"OpenAI / Oracle / SoftBank",dg:"OpenAI",loc:"Abilene, TX",region:"South",mw:1200,mwL:"1.2 GW",acres:1100,inv:"$30B+",invN:30,status:"construction",sqft:"4,000,000",bldgs:"8",jobs:"25,000+",energy:"Grid + Renewables",year:2025,url:"https://openai.com/index/announcing-the-stargate-project/",notes:"Flagship of the $500B Stargate initiative. First two buildings operational Sept 2025 with 200 MW. Oracle leases the site running OCI with NVIDIA Blackwell GPUs. 1,100 acres, 8 buildings totaling 4M sq ft — designed to be the world's largest AI supercluster."},
+{id:2,name:"Stargate – Shackelford Co. (Frontier)",dev:"Oracle / Vantage Data Centers",dg:"OpenAI",loc:"Shackelford Co., TX",region:"South",mw:1400,mwL:"1.4 GW",acres:1200,inv:"$25B",invN:25,status:"planned",sqft:"3,700,000",bldgs:"10",jobs:"5,000+",energy:"Grid + Renewables",year:2026,url:"https://vantage-dc.com/news/vantage-data-centers-announces-frontier-campus/",notes:"Vantage's 'Frontier' campus and Stargate expansion site. Ultra high-density 250kW+ racks with liquid cooling across 1,200 acres. Confirmed as a Stargate site Sept 2025."},
+{id:3,name:"Stargate – Milam Co., Texas",dev:"SoftBank / SB Energy",dg:"OpenAI",loc:"Milam County, TX",region:"South",mw:800,mwL:"~800 MW",acres:500,inv:"Undisclosed",invN:0,status:"planned",sqft:"N/A",bldgs:"TBD",jobs:"TBD",energy:"SB Energy infrastructure",year:2026,url:"https://openai.com/index/five-new-stargate-sites/",notes:"Fast-build Stargate site by SoftBank's SB Energy subsidiary. Designed for accelerated deployment. Part of the September 2025 five-site Stargate expansion."},
+{id:4,name:"Stargate – Port Washington (Lighthouse)",dev:"OpenAI / Oracle / Vantage",dg:"OpenAI",loc:"Port Washington, WI",region:"Midwest",mw:1000,mwL:"~1 GW",acres:670,inv:"$15B",invN:15,status:"planned",sqft:"N/A",bldgs:"4",jobs:"4,000 constr; 700 perm",energy:"Grid",year:2028,url:"https://openai.com/index/five-new-stargate-sites/",notes:"Named 'Lighthouse.' Midwest Stargate anchor. 670-acre campus, 4 buildings. Target completion 2028. Creates ~700 long-term and 4,000 construction jobs."},
+{id:5,name:"Stargate – Lordstown, Ohio",dev:"SoftBank / OpenAI",dg:"OpenAI",loc:"Lordstown, OH",region:"Midwest",mw:700,mwL:"~700 MW",acres:400,inv:"Undisclosed",invN:0,status:"construction",sqft:"N/A",bldgs:"TBD",jobs:"TBD",energy:"PJM / FirstEnergy",year:2026,url:"https://openai.com/index/five-new-stargate-sites/",notes:"Redevelopment of the former GM/Foxconn complex as a large-scale AI campus. SoftBank's advanced data center design. On track to be operational in 2026."},
+{id:6,name:"Stargate – Doña Ana Co., NM",dev:"Oracle / OpenAI",dg:"OpenAI",loc:"Doña Ana Co., NM",region:"South",mw:600,mwL:"~600 MW",acres:500,inv:"Part of $165B Jupiter",invN:5,status:"planned",sqft:"N/A",bldgs:"TBD",jobs:"TBD",energy:"Grid + Renewables",year:2027,url:"https://openai.com/index/five-new-stargate-sites/",notes:"Linked to Project Jupiter near Las Cruces, NM. Part of the Sept 2025 Stargate expansion to nearly 7 GW."},
+{id:7,name:"Stargate – Saline Twp. (The Barn)",dev:"Related Digital / Oracle",dg:"OpenAI",loc:"Saline Township, MI",region:"Midwest",mw:1000,mwL:"1 GW",acres:250,inv:"$7B",invN:7,status:"construction",sqft:"1,650,000",bldgs:"3",jobs:"2,500+ union",energy:"Grid",year:2026,url:"https://openai.com/index/five-new-stargate-sites/",notes:"Named 'The Barn.' Three 550,000 sq ft buildings. Michigan Gov. Whitmer called it 'the largest economic project in the state's history.'"},
+{id:8,name:"Amazon Project Rainier – New Albany",dev:"Amazon AWS",dg:"Amazon",loc:"New Albany, OH",region:"Midwest",mw:2200,mwL:"2.2 GW",acres:1500,inv:"$10B+",invN:10,status:"operational",sqft:"6,900,000",bldgs:"30",jobs:"Thousands",energy:"Grid + Renewables",year:2024,url:"https://aws.amazon.com/blogs/aws/amazon-web-services-ohio/",notes:"Amazon's $8B Project Rainier. 30 interconnected buildings housing Trainium 2 servers supporting Anthropic's Claude LLMs. At full build-out, 6.9M sq ft — 2.5x the Empire State Building."},
+{id:9,name:"Amazon – Sunbury Campus",dev:"Amazon AWS",dg:"Amazon",loc:"Sunbury, OH",region:"Midwest",mw:500,mwL:"~500 MW",acres:200,inv:"$2B",invN:2,status:"planned",sqft:"450,000 (ph.1)",bldgs:"TBD",jobs:"TBD",energy:"Grid",year:2028,url:"https://aws.amazon.com",notes:"New $2B campus in Sunbury, Ohio. First 450,000 sq ft building starts Jan 2028. Part of Amazon's $10B Ohio expansion plan."},
+{id:10,name:"Meta – Franklin Farm, Louisiana",dev:"Meta",dg:"Meta",loc:"Richland Parish, LA",region:"South",mw:1500,mwL:"1.5 GW",acres:2250,inv:"$10B",invN:10,status:"construction",sqft:"4,000,000",bldgs:"9",jobs:"Thousands",energy:"1,500 MW renewable (Entergy)",year:2030,url:"https://about.meta.com/news/",notes:"One of Meta's largest data centers globally. Nine buildings on 2,250 acres — larger than Disneyland. 100% clean energy via Entergy's Geaux Zero. Construction began Dec 2024."},
+{id:11,name:"Meta – El Paso Data Center",dev:"Meta",dg:"Meta",loc:"El Paso, TX",region:"South",mw:1000,mwL:"1 GW",acres:600,inv:"$1.5B",invN:1.5,status:"planned",sqft:"N/A",bldgs:"TBD",jobs:"TBD",energy:"Grid + Renewables",year:2028,url:"https://about.meta.com/news/",notes:"Meta announced a GW-scale campus in El Paso. Expected to launch 2028."},
+{id:12,name:"Meta – Beaver Dam, Wisconsin",dev:"Meta",dg:"Meta",loc:"Beaver Dam, WI",region:"Midwest",mw:300,mwL:"~300 MW",acres:150,inv:"$1B+",invN:1,status:"planned",sqft:"700,000",bldgs:"TBD",jobs:"TBD",energy:"Grid",year:2027,url:"https://about.meta.com/news/",notes:"700,000 sq ft AI data center north of Madison. Part of Meta's aggressive AI infrastructure build-out."},
+{id:13,name:"Microsoft – Mount Pleasant",dev:"Microsoft",dg:"Microsoft",loc:"Mount Pleasant, WI",region:"Midwest",mw:1500,mwL:"1.5 GW",acres:1575,inv:"$3.3B",invN:3.3,status:"construction",sqft:"N/A",bldgs:"Multi-phase",jobs:"Thousands",energy:"MISO Grid",year:2025,url:"https://news.microsoft.com/category/infrastructure/",notes:"Built on land originally from Foxconn. ~1,575 acres. ~1.5 GW eventual capacity. Multi-phase development including Area 3A and 3B."},
+{id:14,name:"Google – Fort Wayne, Indiana",dev:"Google",dg:"Google",loc:"Fort Wayne, IN",region:"Midwest",mw:500,mwL:"~500 MW",acres:300,inv:"$2B",invN:2,status:"construction",sqft:"N/A",bldgs:"TBD",jobs:"TBD",energy:"Grid",year:2025,url:"https://about.google/datacenters/",notes:"Google broke ground April 2024. $2B campus. Partnered with Ivy Tech Community College's STAR program for workforce development."},
+{id:15,name:"Google – Lincoln, NE (Agate LLC)",dev:"Google",dg:"Google",loc:"Lincoln, NE",region:"Midwest",mw:200,mwL:"200+ MW",acres:575,inv:"$600M",invN:0.6,status:"construction",sqft:"2,000,000",bldgs:"TBD",jobs:"TBD",energy:"Grid",year:2025,url:"https://about.google/datacenters/",notes:"Codenamed 'Agate LLC.' 570-580 acres near Omaha. 2M sq ft. 1.8x more energy-efficient than enterprise facilities."},
+{id:16,name:"Google – Mesa, Arizona",dev:"Google",dg:"Google",loc:"Mesa, AZ",region:"West",mw:200,mwL:"~200 MW",acres:100,inv:"$600M",invN:0.6,status:"construction",sqft:"750,000",bldgs:"TBD",jobs:"TBD",energy:"Grid + Solar",year:2025,url:"https://about.google/datacenters/",notes:"Google's first Arizona data center. Tied to a new Phoenix cloud region. Supports Gmail, Google Cloud, and AI workloads."},
+{id:17,name:"Google – West Memphis, Arkansas",dev:"Google",dg:"Google",loc:"West Memphis, AR",region:"South",mw:500,mwL:"~500 MW",acres:1000,inv:"Multi-billion",invN:3,status:"announced",sqft:"N/A",bldgs:"TBD",jobs:"TBD",energy:"Grid",year:2027,url:"https://about.google/datacenters/",notes:"Multi-billion-dollar investment announced November 2025. Campus spanning 1,000+ acres in West Memphis. Major new Google footprint in the South."},
+{id:18,name:"Cologix – Johnstown AI Campus",dev:"Cologix",dg:"Other",loc:"Johnstown, OH",region:"Midwest",mw:800,mwL:"800 MW",acres:154,inv:"$7B",invN:7,status:"construction",sqft:"2,000,000",bldgs:"8",jobs:"TBD",energy:"Grid",year:2026,url:"https://www.cologix.com",notes:"8 AI-ready facilities totaling 2M sq ft, ~25 miles NE of Columbus. One of the largest colocation investments in Ohio history."},
+{id:19,name:"Project Marvel – Bessemer, Alabama",dev:"Undisclosed Hyperscaler",dg:"Other",loc:"Bessemer, AL",region:"South",mw:1200,mwL:"1.2 GW",acres:700,inv:"$14.5B",invN:14.5,status:"planned",sqft:"N/A",bldgs:"18",jobs:"1,000 constr; 330 perm",energy:"Grid",year:2027,url:"",notes:"Rezoned by Bessemer City Council Nov 2025. 18 buildings on ~700 acres. Developer identity not publicly disclosed."},
+{id:20,name:"Project Matador – Carson Co., TX",dev:"Undisclosed",dg:"Other",loc:"Carson County, TX",region:"South",mw:2000,mwL:"2+ GW",acres:5769,inv:"Multi-billion",invN:5,status:"announced",sqft:"N/A",bldgs:"TBD",jobs:"TBD",energy:"Grid + Pantex area",year:2027,url:"",notes:"~5,769 acres in the Texas Panhandle adjacent to the Pantex site. One of the largest land footprints of any planned US campus."},
+{id:21,name:"CoreWeave – Lancaster, Pennsylvania",dev:"CoreWeave",dg:"Other",loc:"Lancaster, PA",region:"Northeast",mw:300,mwL:"100-300 MW",acres:150,inv:"$6B",invN:6,status:"construction",sqft:"N/A",bldgs:"TBD",jobs:"TBD",energy:"Grid",year:2025,url:"https://www.coreweave.com",notes:"100 MW at launch, scalable to 300 MW. $4B in funding secured Aug 2025."},
+{id:22,name:"Galaxy Digital Helios Campus",dev:"Galaxy Digital",dg:"Other",loc:"West Texas (Midland)",region:"South",mw:1700,mwL:"0.8-1.7 GW",acres:800,inv:"$8B",invN:8,status:"construction",sqft:"N/A",bldgs:"TBD",jobs:"TBD",energy:"Grid (ex-crypto mining)",year:2025,url:"https://www.galaxy.com",notes:"Originally a crypto mining facility, repurposed as AI-ready campus. 800 MW approved, expandable to 1.7 GW. CoreWeave is anchor customer."},
+{id:23,name:"Wonder Valley – Box Elder Co., Utah",dev:"O'Leary Digital Ltd.",dg:"Other",loc:"Box Elder County, UT",region:"West",mw:7500,mwL:"7.5 GW",acres:3000,inv:"Undisclosed",invN:0,status:"announced",sqft:"N/A",bldgs:"TBD",jobs:"TBD",energy:"Golden Spike District grid",year:2028,url:"",notes:"Planned 7.5 GW powered compute facility. If built, would be among the largest data center campuses on Earth."},
+{id:24,name:"Project Sail – Coweta Co., Georgia",dev:"Undisclosed",dg:"Other",loc:"Coweta County, GA",region:"South",mw:2000,mwL:"~2 GW",acres:832,inv:"$17B",invN:17,status:"announced",sqft:"4,900,000",bldgs:"13",jobs:"TBD",energy:"Grid",year:2028,url:"",notes:"$17B, 13-building campus on 832 acres. In entitlement stage as of mid-2025. One of the largest proposed campuses in the Southeast."},
+{id:25,name:"Energy Storage Solutions – Rocky Mount",dev:"Energy Storage Solutions",dg:"Other",loc:"Rocky Mount, NC",region:"South",mw:900,mwL:"900 MW",acres:300,inv:"$19.2B",invN:19.2,status:"planned",sqft:"N/A",bldgs:"TBD",jobs:"TBD",energy:"Grid + Battery Storage",year:2026,url:"",notes:"900 MW campus. Construction expected Q1 2026. A twin project is also planned for Fayetteville, NC."},
+{id:26,name:"Compass Meridian – Mississippi",dev:"Compass Datacenters",dg:"Other",loc:"Lauderdale Co., MS",region:"South",mw:800,mwL:"~800 MW",acres:500,inv:"$10B",invN:10,status:"planned",sqft:"2,000,000",bldgs:"8",jobs:"TBD",energy:"Grid",year:2027,url:"https://www.compassdatacenters.com",notes:"Eight data center buildings each spanning 250,000 sq ft. $10B investment in Lauderdale County."},
+{id:27,name:"Vantage – Fredericksburg, Virginia",dev:"Vantage Data Centers",dg:"Other",loc:"Fredericksburg, VA",region:"South",mw:192,mwL:"192 MW",acres:100,inv:"$2B",invN:2,status:"construction",sqft:"N/A",bldgs:"TBD",jobs:"TBD",energy:"Grid",year:2026,url:"https://vantage-dc.com",notes:"New 192 MW campus bringing Vantage's Virginia statewide capacity to 782 MW."},
+{id:28,name:"CleanArc VA1 – Caroline Co., Virginia",dev:"CleanArc Data Centers",dg:"Other",loc:"Caroline County, VA",region:"South",mw:900,mwL:"900 MW",acres:450,inv:"Multi-billion",invN:3,status:"construction",sqft:"N/A",bldgs:"TBD",jobs:"TBD",energy:"Grid",year:2027,url:"",notes:"Flagship campus providing 900 MW grid capacity; first 300 MW available early 2027."}
+];
+
+var SC={
+  operational:{col:"#3dffc0",lbl:"Operational"},
+  construction:{col:"#ff6e3a",lbl:"Construction"},
+  planned:{col:"#ffd060",lbl:"Planned"},
+  announced:{col:"#c07aff",lbl:"Announced"}
+};
+
+var F={status:"all",size:"all",dev:"all",region:"all"};
+var sortKey="mw-d",searchQ="",view="grid",expanded=new Set();
+var tCol="mw",tDir=-1;
+var nextId=29;
+var isDark=true;
+
+// ── THEME TOGGLE ─────────────────────────────────────────────────
+function toggleTheme(){
+  isDark=!isDark;
+  document.documentElement.setAttribute("data-theme",isDark?"dark":"light");
+  document.getElementById("theme-btn").textContent=isDark?"☀ Light Mode":"☾ Dark Mode";
+}
+
+// ── FILTER & SORT ─────────────────────────────────────────────────
+function getFiltered(){
+  var q=searchQ.toLowerCase();
+  return DATA.filter(function(s){
+    if(F.status!=="all"&&s.status!==F.status)return false;
+    if(F.size==="mega"&&s.mw<1000)return false;
+    if(F.size==="large"&&(s.mw<500||s.mw>=1000))return false;
+    if(F.size==="mid"&&(s.mw<200||s.mw>=500))return false;
+    if(F.size==="small"&&s.mw>=200)return false;
+    if(F.dev!=="all"&&s.dg!==F.dev)return false;
+    if(F.region!=="all"&&s.region!==F.region)return false;
+    if(q&&!s.name.toLowerCase().includes(q)&&!s.dev.toLowerCase().includes(q)&&!s.loc.toLowerCase().includes(q))return false;
+    return true;
+  });
+}
+
+function getSorted(arr){
+  return arr.slice().sort(function(a,b){
+    if(sortKey==="mw-d")return b.mw-a.mw;
+    if(sortKey==="mw-a")return a.mw-b.mw;
+    if(sortKey==="inv-d")return b.invN-a.invN;
+    if(sortKey==="ac-d")return b.acres-a.acres;
+    if(sortKey==="yr-a")return a.year-b.year;
+    if(sortKey==="nm-a")return a.name.localeCompare(b.name);
+    return 0;
+  });
+}
+
+function render(){
+  var arr=getSorted(getFiltered());
+  document.getElementById("r-count").textContent=arr.length;
+  document.getElementById("r-total").textContent=DATA.length;
+  document.getElementById("kv-sites").textContent=arr.length;
+  var hasF=F.status!=="all"||F.size!=="all"||F.dev!=="all"||F.region!=="all"||searchQ;
+  document.getElementById("clearbtn").style.display=hasF?"inline-block":"none";
+  if(view==="grid")renderGrid(arr);
+  else renderTable(arr);
+}
+
+// ── RENDER CARDS ─────────────────────────────────────────────────
+function renderGrid(arr){
+  var g=document.getElementById("grid");
+  if(!arr.length){g.innerHTML='<div class="empty">No sites match your filters. Try clearing some filters above.</div>';return;}
+  g.innerHTML=arr.map(function(s){
+    var sc=SC[s.status];
+    var col=sc.col;
+    var pct=Math.min(100,Math.round(s.mw/7500*100));
+    var isOpen=expanded.has(s.id);
+    var grad="linear-gradient(90deg,"+col+","+col+"66)";
+    var linkHtml=s.url?'<div class="clink-row"><a class="clink" href="'+s.url+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">&#128279; Project Website</a></div>':'';
+    return '<div class="site-card'+(isOpen?" open":"")+'">'+
+      '<div class="acc" style="background:'+grad+'"></div>'+
+      '<div class="cbody">'+
+        '<div class="ctop">'+
+          '<div class="cname">'+s.name+'</div>'+
+          '<div class="sbadge" style="border-color:'+col+';color:'+col+';background:'+col+'22">'+sc.lbl+'</div>'+
+        '</div>'+
+        '<div class="cdev">'+s.dev+'</div>'+
+        '<div class="cloc">&#128205; '+s.loc+' &nbsp;&#183;&nbsp; '+s.region+'</div>'+
+        linkHtml+
+        '<div class="mets">'+
+          '<div class="met"><div class="mv" style="color:'+col+'">'+s.mwL+'</div><div class="mk">Capacity</div></div>'+
+          '<div class="met"><div class="mv" style="color:#ffd060">'+s.inv+'</div><div class="mk">Investment</div></div>'+
+          '<div class="met"><div class="mv" style="color:#3dffc0">'+s.acres.toLocaleString()+'</div><div class="mk">Acres</div></div>'+
+          '<div class="met"><div class="mv" style="color:#8aaabb">'+s.year+'</div><div class="mk">Target Yr</div></div>'+
+        '</div>'+
+        '<div class="detail'+(isOpen?" open":"")+'">'+
+          '<div class="dinn">'+
+            '<div class="drows">'+
+              '<div class="drow"><div class="dkey">Developer</div><div class="dval">'+s.dev+'</div></div>'+
+              '<div class="drow"><div class="dkey">Sq Footage</div><div class="dval">'+(s.sqft&&s.sqft!=="N/A"?s.sqft:"—")+'</div></div>'+
+              '<div class="drow"><div class="dkey">Buildings</div><div class="dval">'+s.bldgs+'</div></div>'+
+              '<div class="drow"><div class="dkey">Jobs</div><div class="dval">'+s.jobs+'</div></div>'+
+              '<div class="drow"><div class="dkey">Energy Source</div><div class="dval">'+s.energy+'</div></div>'+
+              '<div class="drow"><div class="dkey">Region</div><div class="dval">'+s.region+'</div></div>'+
+            '</div>'+
+            '<div class="sbar-wrap">'+
+              '<div class="sbar-lbl"><span>MW Scale vs. largest site (7.5 GW)</span><span>'+pct+'%</span></div>'+
+              '<div class="sbar-track"><div class="sbar-fill" style="width:'+pct+'%;background:linear-gradient(90deg,'+col+',#00ccee)"></div></div>'+
+            '</div>'+
+            '<div class="dnotes">'+s.notes+'</div>'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+      '<button class="togglebtn'+(isOpen?" open":"")+('" onclick="toggle('+s.id+',event)">')+
+        (isOpen?"Hide details":"Show details")+' <span class="arr'+(isOpen?" up":"")+'">&#9660;</span>'+
+      '</button>'+
+    '</div>';
+  }).join("");
+}
+
+function toggle(id,e){
+  if(e)e.stopPropagation();
+  if(expanded.has(id))expanded.delete(id);
+  else expanded.add(id);
+  render();
+}
+
+// ── RENDER TABLE ─────────────────────────────────────────────────
+function renderTable(arr){
+  var cols=[{k:"name",l:"Project"},{k:"dev",l:"Developer"},{k:"loc",l:"Location"},{k:"mw",l:"Capacity"},{k:"inv",l:"Investment"},{k:"acres",l:"Acres"},{k:"status",l:"Status"},{k:"year",l:"Year"},{k:"url",l:"Link"}];
+  document.getElementById("thead").innerHTML="<tr>"+cols.map(function(c){
+    var isSorted=tCol===c.k;
+    var arrow=isSorted?(tDir===1?"&#8593;":"&#8595;"):"&#8645;";
+    return '<th class="'+(isSorted?"tsort":"")+'" onclick="tblSort(\''+c.k+'\')">'+c.l+' <span>'+arrow+'</span></th>';
+  }).join("")+"</tr>";
+
+  var sorted=arr.slice().sort(function(a,b){
+    var av=a[tCol],bv=b[tCol];
+    if(typeof av==="number")return(av-bv)*tDir;
+    return String(av||"").localeCompare(String(bv||""))*tDir;
+  });
+
+  if(!sorted.length){
+    document.getElementById("tbody").innerHTML='<tr><td colspan="9" style="text-align:center;padding:48px;color:var(--dim)">No sites match your filters.</td></tr>';
+    return;
+  }
+
+  document.getElementById("tbody").innerHTML=sorted.map(function(s){
+    var sc=SC[s.status];
+    var col=sc.col;
+    var linkCell=s.url?'<a href="'+s.url+'" target="_blank" rel="noopener" style="color:var(--cyan);font-size:11px;text-decoration:none" onclick="event.stopPropagation()">&#128279; Visit</a>':'<span style="color:var(--dim);font-size:10px">—</span>';
+    return '<tr>'+
+      '<td class="tname">'+s.name+'</td>'+
+      '<td style="font-size:11px">'+s.dev+'</td>'+
+      '<td style="font-size:10px;color:var(--mid);white-space:nowrap">'+s.loc+'</td>'+
+      '<td class="tmono" style="color:'+col+';font-weight:700">'+s.mwL+'</td>'+
+      '<td class="tmono">'+s.inv+'</td>'+
+      '<td class="tmono">'+s.acres.toLocaleString()+'</td>'+
+      '<td><span class="sbadge" style="border-color:'+col+';color:'+col+';background:'+col+'22;font-size:9px;padding:2px 8px;border-radius:100px;border:1px solid;white-space:nowrap">'+sc.lbl+'</span></td>'+
+      '<td class="tmono" style="color:var(--mid)">'+s.year+'</td>'+
+      '<td>'+linkCell+'</td>'+
+    '</tr>';
+  }).join("");
+}
+
+function tblSort(col){
+  if(tCol===col)tDir*=-1;
+  else{tCol=col;tDir=-1;}
+  renderTable(getSorted(getFiltered()));
+}
+
+// ── VIEW TOGGLE ───────────────────────────────────────────────────
+function setView(v){
+  view=v;
+  document.getElementById("vb-grid").className="vbtn"+(v==="grid"?" on":"");
+  document.getElementById("vb-tbl").className="vbtn"+(v==="tbl"?" on":"");
+  document.getElementById("grid").style.display=v==="grid"?"":"none";
+  document.getElementById("twrap").style.display=v==="tbl"?"":"none";
+  render();
+}
+
+// ── CLEAR FILTERS ─────────────────────────────────────────────────
+function clearAll(){
+  F={status:"all",size:"all",dev:"all",region:"all"};
+  document.getElementById("search").value="";
+  searchQ="";
+  document.getElementById("sort-sel").value="mw-d";
+  sortKey="mw-d";
+  document.querySelectorAll(".pill").forEach(function(p){
+    p.className="pill"+(p.dataset.v==="all"?" p-all":"");
+  });
+  render();
+}
+
+// ── PILL CLICKS ───────────────────────────────────────────────────
+document.querySelectorAll(".pill").forEach(function(btn){
+  btn.addEventListener("click",function(){
+    var g=this.dataset.g,v=this.dataset.v;
+    F[g]=v;
+    document.querySelectorAll('.pill[data-g="'+g+'"]').forEach(function(p){p.className="pill";});
+    var cls="p-all";
+    if(v==="operational")cls="p-op";
+    else if(v==="construction")cls="p-con";
+    else if(v==="planned")cls="p-pla";
+    else if(v==="announced")cls="p-ann";
+    this.className="pill "+cls;
+    render();
+  });
+});
+
+document.getElementById("search").addEventListener("input",function(){searchQ=this.value;render();});
+document.getElementById("sort-sel").addEventListener("change",function(){sortKey=this.value;render();});
+
+// ── MODAL ─────────────────────────────────────────────────────────
+function openModal(){
+  document.getElementById("modal-overlay").classList.add("open");
+  document.body.style.overflow="hidden";
+}
+
+function closeModal(){
+  document.getElementById("modal-overlay").classList.remove("open");
+  document.body.style.overflow="";
+  clearForm();
+}
+
+function overlayClick(e){
+  if(e.target===document.getElementById("modal-overlay"))closeModal();
+}
+
+function clearForm(){
+  ["f-name","f-dev","f-loc","f-mwl","f-inv","f-sqft","f-bldgs","f-jobs","f-energy","f-url","f-notes"].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el)el.value="";
+  });
+  var mw=document.getElementById("f-mw");if(mw)mw.value="";
+  var ac=document.getElementById("f-acres");if(ac)ac.value="";
+  var yr=document.getElementById("f-year");if(yr)yr.value="";
+  document.getElementById("f-dg").value="Other";
+  document.getElementById("f-region").value="South";
+  document.getElementById("f-status").value="announced";
+}
+
+function val(id){return(document.getElementById(id).value||"").trim();}
+function numVal(id){return parseFloat(document.getElementById(id).value)||0;}
+
+function submitProject(){
+  var name=val("f-name"),dev=val("f-dev"),loc=val("f-loc");
+  var mw=numVal("f-mw"),acres=numVal("f-acres");
+  if(!name||!dev||!loc||!mw||!acres){
+    alert("Please fill in all required fields (marked with *).");
+    return;
+  }
+  var mwL=val("f-mwl")||(mw>=1000?(mw/1000).toFixed(1)+" GW":mw+" MW");
+  var newSite={
+    id:nextId++,
+    name:name,
+    dev:dev,
+    dg:val("f-dg"),
+    loc:loc,
+    region:val("f-region"),
+    mw:mw,
+    mwL:mwL,
+    acres:acres,
+    inv:val("f-inv")||"Undisclosed",
+    invN:0,
+    status:val("f-status"),
+    sqft:val("f-sqft")||"N/A",
+    bldgs:val("f-bldgs")||"TBD",
+    jobs:val("f-jobs")||"TBD",
+    energy:val("f-energy")||"TBD",
+    year:parseInt(val("f-year"))||2027,
+    url:val("f-url"),
+    notes:val("f-notes")||"User-added project."
+  };
+  DATA.push(newSite);
+  closeModal();
+  showToast();
+  render();
+}
+
+function showToast(){
+  var t=document.getElementById("toast");
+  t.classList.add("show");
+  setTimeout(function(){t.classList.remove("show");},3000);
+}
+
+// keyboard: Escape closes modal
+document.addEventListener("keydown",function(e){
+  if(e.key==="Escape")closeModal();
+});
+
+render();
+</script>
+</body>
+</html>
